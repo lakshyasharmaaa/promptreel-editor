@@ -136,6 +136,7 @@ export default function Canvas() {
               />
             ) : (
               <VideoPlayer
+                key={activeVisualClip.id}
                 src={resolveMediaUrl(activeVisualClip.mediaUrl)}
                 clipOffset={clipOffset}
                 isPlaying={isPlaying}

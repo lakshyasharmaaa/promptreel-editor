@@ -3,6 +3,17 @@ import multer from 'multer';
 import path from 'path';
 import ffmpeg from 'fluent-ffmpeg';
 
+const ffmpegStatic = require('ffmpeg-static');
+const ffprobeStatic = require('ffprobe-static');
+
+// Set paths to static binaries
+if (ffmpegStatic) {
+  ffmpeg.setFfmpegPath(ffmpegStatic as string);
+}
+if (ffprobeStatic && ffprobeStatic.path) {
+  ffmpeg.setFfprobePath(ffprobeStatic.path);
+}
+
 const router = Router();
 
 const ALLOWED_MIME_TYPES = new Set([

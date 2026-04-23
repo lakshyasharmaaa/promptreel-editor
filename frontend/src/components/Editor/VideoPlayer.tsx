@@ -28,6 +28,13 @@ export default function VideoPlayer({ src, clipOffset, isPlaying, volume = 1 }: 
     playerRef.current = player;
     prevSrcRef.current = src;
 
+    player.on('loadedmetadata', () => {
+      if (!syncingRef.current) {
+        player.currentTime(clipOffset);
+        syncingRef.current = true;
+      }
+    });
+
     return () => {
       if (playerRef.current && !playerRef.current.isDisposed()) {
         playerRef.current.dispose();
@@ -49,13 +56,26 @@ export default function VideoPlayer({ src, clipOffset, isPlaying, volume = 1 }: 
   useEffect(() => {
     const player = playerRef.current;
     if (!player || player.isDisposed()) return;
+    
     const cur = player.currentTime() ?? 0;
-    if (Math.abs(cur - clipOffset) > 0.25) {
-      syncingRef.current = true;
-      player.currentTime(clipOffset);
-      setTimeout(() => { syncingRef.current = false; }, 300);
+    const diff = Math.abs(cur - clipOffset);
+    
+    // Don't issue seek commands if it's already seeking to avoid loops
+    if (player.seeking()) return;
+
+    if (isPlaying) {
+      // Let the native player advance naturally, only correct if drift is large (>0.5s)
+      // Only correct if we actually have enough data to play (readyState >= 2)
+      if (diff > 0.5 && player.readyState() >= 2) {
+        player.currentTime(clipOffset);
+      }
+    } else {
+      // When paused (scrubbing), keep it tightly synced
+      if (diff > 0.05) {
+        player.currentTime(clipOffset);
+      }
     }
-  }, [clipOffset]);
+  }, [clipOffset, isPlaying]);
 
   // Play / pause
   useEffect(() => {
